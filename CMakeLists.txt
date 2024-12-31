@@ -1,4 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
+
+include_directories("${CMAKE_SOURCE_DIR}/vendor/rapidjson/include")
+add_definitions(-DFMT_HEADER_ONLY)
+include_directories("${CMAKE_SOURCE_DIR}/vendor/fmt/include")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /utf-8")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /utf-8")
+
 project(DynamicLinkLibLoader VERSION 1.0 LANGUAGES CXX)
 
 # MSVC-specific settings to handle different build configurations
@@ -27,3 +34,10 @@ option(ENABLE_TESTS "Enable building tests" ON)
 add_subdirectory(source)
 
 # Optionally, add a tests subdirectory if ENABLE_TESTS is true
+if (ENABLE_TESTS)
+    enable_testing()
+    add_subdirectory(tests/Executable)
+    if (MSVC) 
+        set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Executable)
+    endif()
+endif()
