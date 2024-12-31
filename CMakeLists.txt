@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 include_directories("${CMAKE_SOURCE_DIR}/vendor/rapidjson/include")
 add_definitions(-DFMT_HEADER_ONLY)
+add_definitions(-UNDEBUG)
 include_directories("${CMAKE_SOURCE_DIR}/vendor/fmt/include")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /utf-8")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /utf-8")

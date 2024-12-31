@@ -1,6 +1,8 @@
 #include <windows.h>
 #include <fmt/format.h>
-#include <Common/Log.hpp>
+#include <cassert>
+#include "Common/Log.hpp"
+#include "Common/Semver.hpp"
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved) {
 	if (ul_reason_for_call == DLL_PROCESS_ATTACH) {

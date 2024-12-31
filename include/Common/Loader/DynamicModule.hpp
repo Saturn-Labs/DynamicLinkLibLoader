@@ -1,23 +1,21 @@
 #pragma once
 #include "Common/Common.hpp"
 
+
 namespace DynaLink {
+	struct DynamicLinkModuleModel;
+	struct DynamicLinkModuleDescriptor;
+	struct DynamicLinkImportDescriptor;
 	struct DynamicModule {
 		void* moduleHandle;
 		std::string moduleFile;
-		std::vector<DynamicLinkModuleModel> dynamicLinkModules;
-		std::vector<DynamicLinkModuleModel> loadedDynamicLinkModules;
-		std::vector<DynamicLinkModuleModel> unloadedDynamicLinkModules;
+		std::vector<DynamicLinkModuleModel> parsedDynamicLinkModules;
+		std::vector<DynamicLinkModuleDescriptor> dynamicLinkModuleDescriptors;
+		std::vector<DynamicLinkModuleDescriptor> linkedDynamicModules;
+		std::vector<DynamicLinkImportDescriptor> linkedDynamicImports;
 
-		bool IsValid() const {
-			return moduleHandle != nullptr && moduleFile != "" && GetModuleHandle(fs::path(moduleFile).filename().string().c_str());
-		}
-
-		void Free() {
-			if (IsValid()) {
-				FreeLibrary(reinterpret_cast<HMODULE>(moduleHandle));
-				moduleHandle = nullptr;
-			}
-		}
+		bool IsValid() const;
+		void Free();
+		uintptr_t GetBaseAddress() const;
 	};
 }
