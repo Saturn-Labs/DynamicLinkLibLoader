@@ -1,5 +1,5 @@
-#include "Common/Descriptors/DynamicLinkModuleDescriptor.hpp"
-#include "Common/Loader/DynamicModule.hpp"
+#include "Descriptors/DynamicLinkModuleDescriptor.hpp"
+#include "Loader/DynamicModule.hpp"
 
 namespace DynaLink {
 	std::optional<DynamicLinkModuleDescriptor> DynamicLinkModuleDescriptor::Create(DynamicModule& module, const IMAGE_IMPORT_DESCRIPTOR& dynamicImportDescriptor) {

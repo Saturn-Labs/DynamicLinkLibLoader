@@ -1,6 +1,6 @@
 #pragma once
-#include "Common/Descriptors/DynamicLinkImportDescriptor.hpp"
-#include "Common/Loader/DynamicModule.hpp"
+#include "Descriptors/DynamicLinkImportDescriptor.hpp"
+#include "Loader/DynamicModule.hpp"
 #include "Common/Common.hpp"
 #include <Windows.h>
 

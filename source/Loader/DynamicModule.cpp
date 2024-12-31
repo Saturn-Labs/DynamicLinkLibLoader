@@ -1,7 +1,7 @@
-#include "Common/Loader/DynamicModule.hpp"
+#include "Loader/DynamicModule.hpp"
 #include <windows.h>
-#include "Common/Models/DynamicLinkModuleModel.hpp"
-#include "Common/Descriptors/DynamicLinkModuleDescriptor.hpp"
+#include "Models/DynamicLinkModuleModel.hpp"
+#include "Descriptors/DynamicLinkModuleDescriptor.hpp"
 
 namespace DynaLink
 {

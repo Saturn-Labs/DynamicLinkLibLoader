@@ -1,5 +1,5 @@
 #pragma once
-#include "Common/Loader/DynamicModule.hpp"
+#include "Loader/DynamicModule.hpp"
 #include "Common/Common.hpp"
 #include <Windows.h>
 

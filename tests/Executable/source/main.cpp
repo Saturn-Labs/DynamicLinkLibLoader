@@ -25,6 +25,15 @@ void DataClass::PrintData(const DataClass& dataClass) {
 	LOG_TRACE("[DataClass] Data is: {}", dataClass.sMyData);
 }
 
+namespace DynaLink {
+	struct DynamicLinkModuleModel;
+	struct DynamicLinkModuleDescriptor;
+	struct DynamicLinkImportDescriptor;
+	struct DynamicModule {
+		char filler[136];
+	};
+}
+
 int main() {
 	uint64_t baseAddress = reinterpret_cast<uint64_t>(GetModuleHandle(nullptr));
 	LOG_TRACE("[Test Executable] Base address is 0x{:x}", baseAddress);
@@ -37,6 +46,12 @@ int main() {
 		return 1;
 	}
 
+	auto LoadDynamicLinkLibrary = reinterpret_cast<DynaLink::DynamicModule(*)(const std::string& moduleName, const std::vector<std::string>& dynamicLinkingFiles)>(GetProcAddress(libLoader, "?LoadDynamicLinkLibrary@Loader@DynaLink@@SA?AUDynamicModule@2@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@5@@Z"));
+	if (LoadDynamicLinkLibrary == nullptr) {
+		LOG_ERROR("[Test Executable] Failed to get LoadDynamicLinkLibrary function.");
+		return 1;
+	}
+	LoadDynamicLinkLibrary("./Library.dll", {"./Executable.dynalink.json"});
 	std::cin.get();
 	return 0;
 }

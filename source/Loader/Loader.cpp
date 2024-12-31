@@ -1,9 +1,11 @@
-#include "Common/Loader/Loader.hpp"
-#include "Common/Loader/DynamicModule.hpp"
+#include "Loader/Loader.hpp"
+#include "Loader/DynamicModule.hpp"
 #include "Common/Log.hpp"
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/document.h>
 #include <fstream>
+#pragma comment(lib, "version.lib")
+
 namespace json = rapidjson;
 
 namespace DynaLink {
@@ -127,12 +129,78 @@ namespace DynaLink {
 			}
 			dynamicModule.linkedDynamicModules.push_back(descriptor);
 		}
-		return (dynamicModule.dynamicLinkModuleDescriptors.size() > 1 && dynamicModule.linkedDynamicModules.size() > 1);
+		return (dynamicModule.dynamicLinkModuleDescriptors.size() >= 1) ? dynamicModule.linkedDynamicModules.size() == dynamicModule.dynamicLinkModuleDescriptors.size() : true;
+	}
+
+	std::vector<std::string> Loader::GetDllSearchPaths() {
+		std::vector<std::string> searchPaths;
+		char currentProcessDir[MAX_PATH];
+		if (GetModuleFileNameA(NULL, currentProcessDir, MAX_PATH) > 0) {
+			std::string processDir(currentProcessDir);
+			size_t pos = processDir.find_last_of("\\/");
+			if (pos != std::string::npos) {
+				searchPaths.push_back(processDir.substr(0, pos));
+			}
+		}
+
+		char currentDir[MAX_PATH];
+		if (GetCurrentDirectoryA(MAX_PATH, currentDir) > 0) {
+			searchPaths.push_back(currentDir);
+		}
+
+		// Get system directories
+		char systemDir[MAX_PATH];
+		if (GetSystemDirectoryA(systemDir, MAX_PATH) > 0) {
+			searchPaths.push_back(systemDir);
+		}
+
+		// Get the Windows directory
+		char windowsDir[MAX_PATH];
+		if (GetWindowsDirectoryA(windowsDir, MAX_PATH) > 0) {
+			searchPaths.push_back(windowsDir);
+		}
+
+		const char* pathEnv = std::getenv("PATH");
+		if (pathEnv != nullptr) {
+			std::string pathString(pathEnv);
+			size_t startPos = 0, endPos;
+			while ((endPos = pathString.find(';', startPos)) != std::string::npos) {
+				searchPaths.push_back(pathString.substr(startPos, endPos - startPos));
+				startPos = endPos + 1;
+			}
+			searchPaths.push_back(pathString.substr(startPos));
+		}
+
+		char dllSearchDir[MAX_PATH];
+		DWORD dllSearchDirSize = GetDllDirectoryA(MAX_PATH, dllSearchDir);
+		if (dllSearchDirSize > 0) {
+			searchPaths.push_back(dllSearchDir);
+		}
+
+		return searchPaths;
 	}
 
 	DynamicModule Loader::LoadDynamicLinkLibrary(const std::string& moduleFile, const std::vector<std::string>& dynamicLinkFiles) {
 		DynamicModule moduleResult{ nullptr, "", {} };
-		if (!fs::exists(moduleFile) || !fs::is_regular_file(moduleFile)) {
+		auto searchDirs = GetDllSearchPaths();
+		bool foundDll = false;
+		if (moduleFile.starts_with("./")) {
+			if (fs::exists(moduleFile) && fs::is_regular_file(moduleFile)) {
+				foundDll = true;
+			}
+		}
+		else {
+			for (const auto& searchDir : searchDirs) {
+				fs::path searchPath(searchDir);
+				fs::path moduleFilePath(moduleFile);
+				fs::path moduleFile = searchPath / moduleFilePath;
+				if (fs::exists(moduleFile) && fs::is_regular_file(moduleFile)) {
+					foundDll = true;
+					break;
+				}
+			}
+		}
+		if (!foundDll) {
 			LOG_ERROR("[DynamicLinkLibLoader] Failed to load module '{}', file not found!", moduleFile);
 			return moduleResult;
 		}

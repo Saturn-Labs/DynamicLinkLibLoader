@@ -1,4 +1,4 @@
-#include "Common/Descriptors/DynamicLinkImportDescriptor.hpp"
+#include "Descriptors/DynamicLinkImportDescriptor.hpp"
 
 namespace DynaLink {
 	DynamicLinkImportDescriptor::DynamicLinkImportDescriptor(DynamicLinkModuleDescriptor& moduleDescriptor, const char* importName, uintptr_t* importAddress) : 

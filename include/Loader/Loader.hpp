@@ -6,8 +6,8 @@
 #include <vector>
 #include "Common/Common.hpp"
 #include "Common/Semver.hpp"
-#include "Common/Models/DynamicLinkModuleModel.hpp"
-#include "Common/Descriptors/DynamicLinkModuleDescriptor.hpp"
+#include "Models/DynamicLinkModuleModel.hpp"
+#include "Descriptors/DynamicLinkModuleDescriptor.hpp"
 #include <filesystem>
 namespace fs = std::filesystem;
 
@@ -19,5 +19,6 @@ namespace DynaLink {
 		static Semver GetModuleVersion(HMODULE moduleHandle);
 		static bool DynamicallyLinkModule(DynamicModule& dynamicModule);
 		static std::vector<DynamicLinkModuleDescriptor> GetDynamicLinkModuleDescriptors(DynamicModule& dynamicModule);
+		static std::vector<std::string> GetDllSearchPaths();
 	};
 }
