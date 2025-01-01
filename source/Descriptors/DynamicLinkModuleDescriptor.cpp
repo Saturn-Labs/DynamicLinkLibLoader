@@ -1,17 +1,18 @@
 #include "Descriptors/DynamicLinkModuleDescriptor.hpp"
 #include "Loader/DynamicModule.hpp"
+#include "Loader/Loader.hpp"
 
 namespace DynaLink {
-	std::optional<DynamicLinkModuleDescriptor> DynamicLinkModuleDescriptor::Create(DynamicModule& module, const IMAGE_IMPORT_DESCRIPTOR& dynamicImportDescriptor) {
+	std::optional<DynamicLinkModuleDescriptor> DynamicLinkModuleDescriptor::Create(const std::string& moduleName, void* moduleBase, const IMAGE_IMPORT_DESCRIPTOR& dynamicImportDescriptor) {
 		static IMAGE_IMPORT_DESCRIPTOR zero = { 0 };
-		if (!module.IsValid() || memcmp(&dynamicImportDescriptor, &zero, sizeof(zero)) == 0) {
+		if (moduleBase == nullptr || !Loader::IsModuleValid(reinterpret_cast<HMODULE>(moduleBase)) || memcmp(&dynamicImportDescriptor, &zero, sizeof(zero)) == 0) {
 			return std::nullopt;
 		}
 		
-		DynamicLinkModuleDescriptor descriptor = { module, dynamicImportDescriptor, {} };
+		DynamicLinkModuleDescriptor descriptor = { moduleName, moduleBase, dynamicImportDescriptor, {} };
 		if (dynamicImportDescriptor.FirstThunk != 0 && dynamicImportDescriptor.OriginalFirstThunk != 0 && dynamicImportDescriptor.ForwarderChain == -1) {
-			uintptr_t* importLookupTable = reinterpret_cast<uintptr_t*>(module.GetBaseAddress() + dynamicImportDescriptor.OriginalFirstThunk);
-			uintptr_t* importAddressTable = reinterpret_cast<uintptr_t*>(module.GetBaseAddress() + dynamicImportDescriptor.FirstThunk);
+			uintptr_t* importLookupTable = reinterpret_cast<uintptr_t*>(reinterpret_cast<uintptr_t>(moduleBase) + dynamicImportDescriptor.OriginalFirstThunk);
+			uintptr_t* importAddressTable = reinterpret_cast<uintptr_t*>(reinterpret_cast<uintptr_t>(moduleBase) + dynamicImportDescriptor.FirstThunk);
 
 			while (*importLookupTable != 0) {
 				bool isOrdinal = IMAGE_SNAP_BY_ORDINAL(*importLookupTable);
@@ -21,8 +22,8 @@ namespace DynaLink {
 					++importAddressTable;
 					continue;
 				}
-				PIMAGE_IMPORT_BY_NAME byNameImport = reinterpret_cast<PIMAGE_IMPORT_BY_NAME>(module.GetBaseAddress() + *importLookupTable);
-				DynamicLinkImportDescriptor importDescriptor = { descriptor, byNameImport->Name, importAddressTable };
+				PIMAGE_IMPORT_BY_NAME byNameImport = reinterpret_cast<PIMAGE_IMPORT_BY_NAME>(reinterpret_cast<uintptr_t>(moduleBase) + *importLookupTable);
+				DynamicLinkImportDescriptor importDescriptor = { descriptor.GetImportModuleName(), byNameImport->Name, importAddressTable};
 				descriptor.importDescriptors.push_back(importDescriptor);
 				++importLookupTable;
 				++importAddressTable;
@@ -32,7 +33,7 @@ namespace DynaLink {
 	}
 
 	bool DynamicLinkModuleDescriptor::IsValid() const {
-		return module.IsValid() && HasDynamicImports();
+		return moduleBase != nullptr && Loader::IsModuleValid(reinterpret_cast<HMODULE>(moduleBase)) && HasDynamicImports();
 	}
 
 	bool DynamicLinkModuleDescriptor::HasDynamicImports() const {
@@ -40,18 +41,15 @@ namespace DynaLink {
 		return memcmp(&moduleImportDescriptor, &zero, sizeof(zero)) != 0;
 	}
 
-	const char* DynamicLinkModuleDescriptor::GetImportModuleName() const {
-		if (!IsValid()) {
-			return "";
-		}
-		return reinterpret_cast<const char*>(module.GetBaseAddress() + moduleImportDescriptor.Name);
+	std::string DynamicLinkModuleDescriptor::GetImportModuleName() const {
+		return moduleName;
 	}
 
 	bool DynamicLinkModuleDescriptor::Equals(const DynamicLinkModuleDescriptor& other) const {
 		if (!IsValid()) {
 			return false;
 		}
-		return module.GetBaseAddress() == other.module.GetBaseAddress() && ((HasDynamicImports() && other.HasDynamicImports()) && memcmp(&moduleImportDescriptor, &other.moduleImportDescriptor, sizeof(moduleImportDescriptor)) == 0);
+		return moduleBase == other.moduleBase && ((HasDynamicImports() && other.HasDynamicImports()) && memcmp(&moduleImportDescriptor, &other.moduleImportDescriptor, sizeof(moduleImportDescriptor)) == 0);
 	}
 
 	bool DynamicLinkModuleDescriptor::operator==(const DynamicLinkModuleDescriptor& other) const {

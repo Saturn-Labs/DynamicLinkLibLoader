@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.20)
-
 include_directories("${CMAKE_SOURCE_DIR}/vendor/rapidjson/include")
 add_definitions(-DFMT_HEADER_ONLY)
 add_definitions(-UNDEBUG)
@@ -31,15 +30,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Option to enable or disable tests
 option(ENABLE_TESTS "Enable building tests" ON)
 
+set(ARCH_BITS 0)
+set(ARCH_NAME 0)
+if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
+    set(ARCH_BITS 64)
+    set(ARCH_NAME "x64")
+elseif(${CMAKE_SIZEOF_VOID_P} EQUAL 4)
+    set(ARCH_BITS 32)
+    set(ARCH_NAME "x86")
+else()
+    set(ARCH_BITS "Unknown")
+    set(ARCH_NAME "Unknown")
+endif()
+
 # Add subdirectory for source code
 add_subdirectory(source)
 
-# Optionally, add a tests subdirectory if ENABLE_TESTS is true
-if (ENABLE_TESTS)
-    enable_testing()
-    add_subdirectory(tests/Executable)
-    add_subdirectory(tests/Library)
-    if (MSVC) 
-        set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Executable)
-    endif()
+add_subdirectory(tests/Executable)
+add_subdirectory(tests/Library)
+add_subdirectory(tests/OtherLibrary)
+if (MSVC) 
+    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Executable)
 endif()

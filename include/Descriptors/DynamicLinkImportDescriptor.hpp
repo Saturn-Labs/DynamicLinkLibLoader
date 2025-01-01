@@ -6,10 +6,10 @@
 namespace DynaLink {
 	struct DynamicLinkModuleDescriptor;
 	struct LOADER_API DynamicLinkImportDescriptor {
-		DynamicLinkModuleDescriptor& moduleDescriptor;
+		std::string moduleName;
 		const char* importName;
 
-		DynamicLinkImportDescriptor(DynamicLinkModuleDescriptor& moduleDescriptor, const char* importName, uintptr_t* importAddress);
+		DynamicLinkImportDescriptor(const std::string& moduleName, const char* importName, uintptr_t* importAddress);
 		void WriteAddress(uintptr_t address);
 		uintptr_t ReadAddress() const;
 		uintptr_t* GetIATEntryAddress() const;

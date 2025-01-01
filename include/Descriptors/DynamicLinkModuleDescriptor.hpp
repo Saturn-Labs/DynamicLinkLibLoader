@@ -6,14 +6,15 @@
 
 namespace DynaLink {
 	struct LOADER_API DynamicLinkModuleDescriptor {
-		DynamicModule& module;
+		std::string moduleName;
+		void* moduleBase = nullptr;
 		IMAGE_IMPORT_DESCRIPTOR moduleImportDescriptor = { 0 };
 		std::vector<DynamicLinkImportDescriptor> importDescriptors = {};
 
 		bool IsValid() const;
 		bool HasDynamicImports() const;
-		const char* GetImportModuleName() const;
-		static std::optional<DynamicLinkModuleDescriptor> Create(DynamicModule& module, const IMAGE_IMPORT_DESCRIPTOR& dynamicImportDescriptor);
+		std::string GetImportModuleName() const;
+		static std::optional<DynamicLinkModuleDescriptor> Create(const std::string& moduleName, void* moduleBase, const IMAGE_IMPORT_DESCRIPTOR& dynamicImportDescriptor);
 		bool Equals(const DynamicLinkModuleDescriptor& other) const;
 		bool operator==(const DynamicLinkModuleDescriptor& other) const;
 		bool operator!=(const DynamicLinkModuleDescriptor& other) const;

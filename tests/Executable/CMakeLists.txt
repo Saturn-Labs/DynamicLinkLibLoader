@@ -1,5 +1,6 @@
 add_executable(Executable "source/main.cpp")
-add_test(NAME Executable COMMAND Executable)
 add_dependencies(Executable DynamicLinkLibLoader)
 add_dependencies(Executable Library)
+add_dependencies(Executable OtherLibrary)
+target_compile_definitions(Executable PRIVATE TARGET_LOG_NAME="Executable")
 target_include_directories(Executable PRIVATE "${CMAKE_SOURCE_DIR}/include/Common")

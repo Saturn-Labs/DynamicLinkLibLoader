@@ -9,6 +9,8 @@
 #include <filesystem>
 #include <rapidjson/rapidjson.h>
 #include <optional>
+#define STRINGIFY(...) #__VA_ARGS__
+#define STR(...) STRINGIFY(__VA_ARGS__)
 
 namespace fs = std::filesystem;
 namespace json = rapidjson;

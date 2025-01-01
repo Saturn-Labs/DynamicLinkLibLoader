@@ -9,6 +9,8 @@
 namespace json = rapidjson;
 
 namespace DynaLink {
+	std::vector<std::shared_ptr<DynamicModule>> Loader::loadedDynamicModules{};
+
 	std::vector<DynamicLinkModuleDescriptor> Loader::GetDynamicLinkModuleDescriptors(DynamicModule& dynamicModule) {
 		static IMAGE_IMPORT_DESCRIPTOR zero = { 0 };
 		if (!dynamicModule.IsValid()) {
@@ -36,7 +38,7 @@ namespace DynaLink {
 		}
 
 		while (memcmp(&dynamicImport, &zero, sizeof(zero)) != 0) {
-			auto descriptor = DynamicLinkModuleDescriptor::Create(dynamicModule, *dynamicImport);
+			auto descriptor = DynamicLinkModuleDescriptor::Create(fs::path(dynamicModule.moduleFile).filename().string(), dynamicModule.moduleHandle, *dynamicImport);
 			if (descriptor.has_value()) {
 				dynamicModule.dynamicLinkModuleDescriptors.push_back(descriptor.value());
 			}
@@ -85,9 +87,9 @@ namespace DynaLink {
 				continue;
 			}
 
-			HMODULE importModule = GetModuleHandleA(descriptor.GetImportModuleName());
+			HMODULE importModule = GetModuleHandleA(descriptor.GetImportModuleName().c_str());
 			if (importModule == nullptr) {
-				LOG_ERROR("[DynamicLinkLibLoader] Failed to link module '{}' functions, required by '{}'... Module not found!", descriptor.GetImportModuleName(), dynamicModule.moduleFile);
+				LOG_ERROR("Failed to link module '{}' functions, required by '{}'... Module not found!", descriptor.GetImportModuleName(), dynamicModule.moduleFile);
 				continue;
 			}
 
@@ -97,7 +99,7 @@ namespace DynaLink {
 			});
 
 			if (moduleModelIterator == dynamicModule.parsedDynamicLinkModules.end()) {
-				LOG_ERROR("[DynamicLinkLibLoader] Failed to link module '{}' functions, required by '{}'... Dynamic Linking file not found!", descriptor.GetImportModuleName(), dynamicModule.moduleFile);
+				LOG_ERROR("Failed to link module '{}' functions, required by '{}'... Dynamic Linking file not found!", descriptor.GetImportModuleName(), dynamicModule.moduleFile);
 				continue;
 			}
 
@@ -121,7 +123,7 @@ namespace DynaLink {
 							dynamicModule.linkedDynamicImports.push_back(import);
 						}
 						else if (pointer.type == "pattern") {
-							LOG_WARN("[DynamicLinkLibLoader] Failed to link module '{}' function '{}', required by '{}'... Pattern linking not supported!", descriptor.GetImportModuleName(), import.importName, dynamicModule.moduleFile);
+							LOG_WARN("Failed to link module '{}' function '{}', required by '{}'... Pattern linking not supported!", descriptor.GetImportModuleName(), import.importName, dynamicModule.moduleFile);
 						}
 						break;
 					}
@@ -180,8 +182,27 @@ namespace DynaLink {
 		return searchPaths;
 	}
 
-	DynamicModule Loader::LoadDynamicLinkLibrary(const std::string& moduleFile, const std::vector<std::string>& dynamicLinkFiles) {
-		DynamicModule moduleResult{ nullptr, "", {} };
+	constexpr std::string ParseArchitecture(const std::string& architecture) {
+		if (architecture == "amd64" || architecture == "x64" || architecture == "x86_64") {
+			return "amd64";
+		}
+		else if (architecture == "i386" || architecture == "x86") {
+			return "i386";
+		}
+		return "Unknown";
+	}
+
+	std::string Loader::GetCurrentArchitecture() {
+		if (sizeof(void*) == 8) {
+			return "amd64";
+		}
+		else if (sizeof(void*) == 4) {
+			return "i386";
+		}
+		return "Unknown"; // Thor Odinson: ...that's impossible...
+	}
+
+	std::weak_ptr<DynamicModule> Loader::LoadDynamicLinkLibrary(const std::string& moduleFile, const std::vector<std::string>& dynamicLinkFiles) {
 		auto searchDirs = GetDllSearchPaths();
 		bool foundDll = false;
 		if (moduleFile.starts_with("./")) {
@@ -201,11 +222,11 @@ namespace DynaLink {
 			}
 		}
 		if (!foundDll) {
-			LOG_ERROR("[DynamicLinkLibLoader] Failed to load module '{}', file not found!", moduleFile);
-			return moduleResult;
+			LOG_ERROR("Failed to load module '{}', file not found!", moduleFile);
+			return {};
 		}
 		std::string moduleName = fs::path(moduleFile).filename().string();
-		LOG_TRACE("[DynamicLinkLibLoader] Loading module '{}'...", moduleName);
+		LOG_TRACE("Loading module '{}'...", moduleName);
 		
 		auto moduleHandle = LoadLibraryA(moduleFile.c_str());
 		uintptr_t moduleBase = reinterpret_cast<uintptr_t>(moduleHandle);
@@ -221,17 +242,23 @@ namespace DynaLink {
 				0,
 				nullptr
 			);
-			LOG_ERROR("[DynamicLinkLibLoader] Failed to load module '{}', windows internal error 0x{:x} '{}'...", moduleName, lastError, errorMessage);
+			LOG_ERROR("Failed to load module '{}', windows internal error 0x{:x} '{}'...", moduleName, lastError, errorMessage);
+			return {};
+		}
+
+		std::shared_ptr<DynamicModule> moduleResult = std::shared_ptr<DynamicModule>(new DynamicModule(reinterpret_cast<void*>(moduleHandle), moduleFile, {}, {}, {}, {}));
+		GetDynamicLinkModuleDescriptors(*moduleResult);
+		loadedDynamicModules.push_back(moduleResult);
+
+		if (moduleResult->dynamicLinkModuleDescriptors.empty()) {
+			LOG_WARN("No dynamic link modules to link against.", moduleName);
+			LOG_TRACE("Module '{}' loaded successfully at 0x{:x}.", moduleName, moduleBase);
 			return moduleResult;
 		}
 
-		moduleResult.moduleHandle = moduleHandle;
-		moduleResult.moduleFile = moduleFile;
-		GetDynamicLinkModuleDescriptors(moduleResult);
-
 		if (dynamicLinkFiles.empty()) {
-			LOG_WARN("[DynamicLinkLibLoader] No dynamic link files provided for '{}'.", moduleName);
-			LOG_TRACE("[DynamicLinkLibLoader] Module '{}' loaded successfully at 0x{:x}.", moduleName, moduleBase);
+			LOG_WARN("No dynamic link files provided for '{}'.", moduleName);
+			LOG_TRACE("Module '{}' loaded successfully at 0x{:x}.", moduleName, moduleBase);
 			return moduleResult;
 		}
 
@@ -239,30 +266,30 @@ namespace DynaLink {
 		for (const auto& dynamicLinkFile : dynamicLinkFiles) {
 			validator.Reset();
 			if (!fs::exists(dynamicLinkFile) || !fs::is_regular_file(dynamicLinkFile)) {
-				LOG_ERROR("[DynamicLinkLibLoader] Failed to load dynamic link file '{}', file not found!", dynamicLinkFile);
+				LOG_ERROR("Failed to load dynamic link file '{}', file not found!", dynamicLinkFile);
 				continue;
 			}
 			std::string dynamicLinkFileName = fs::path(dynamicLinkFile).filename().string();
 			std::ifstream dynamicLinkFileStream(dynamicLinkFile);
 			std::string dynamicLinkFileContents((std::istreambuf_iterator<char>(dynamicLinkFileStream)), std::istreambuf_iterator<char>());
-			LOG_TRACE("[DynamicLinkLibLoader] Loading dynamic link file '{}'...", dynamicLinkFileName);
+			LOG_TRACE("Loading dynamic link file '{}'...", dynamicLinkFileName);
 			json::Document document;
 			json::ParseResult result = document.Parse(dynamicLinkFileContents.c_str());
 			if (result.IsError()) {
-				LOG_ERROR("[DynamicLinkLibLoader] Failed to parse dynamic link file '{}'...!", dynamicLinkFileName);
-				LOG_ERROR("[DynamicLinkLibLoader]	Error: {} at {}", json::GetParseError_En(result.Code()), result.Offset());
+				LOG_ERROR("Failed to parse dynamic link file '{}'...!", dynamicLinkFileName);
+				LOG_ERROR("  Error: {} at {}", json::GetParseError_En(result.Code()), result.Offset());
 				continue;
 			}
 			
 			if (!document.Accept(validator)) {
-				LOG_ERROR("[DynamicLinkLibLoader] Failed to validate dynamic link file '{}', invalid schema!", dynamicLinkFileName);
+				LOG_ERROR("Failed to validate dynamic link file '{}', invalid schema!", dynamicLinkFileName);
 				json::StringBuffer buffer;
 				validator.GetInvalidSchemaPointer().StringifyUriFragment(buffer);
-				LOG_ERROR("[DynamicLinkLibLoader]	Error, invalid schema: {}", buffer.GetString());
-				LOG_ERROR("[DynamicLinkLibLoader]	Error, invalid keyword: {}", validator.GetInvalidSchemaKeyword());
+				LOG_ERROR("  Error, invalid schema: {}", buffer.GetString());
+				LOG_ERROR("  Error, invalid keyword: {}", validator.GetInvalidSchemaKeyword());
 				buffer.Clear();
 				validator.GetInvalidDocumentPointer().StringifyUriFragment(buffer);
-				LOG_ERROR("[DynamicLinkLibLoader]	Error, invalid document: {}", buffer.GetString());
+				LOG_ERROR("  Error, invalid document: {}", buffer.GetString());
 				continue;
 			}
 
@@ -271,13 +298,17 @@ namespace DynaLink {
 				{}
 			};
 
-			for (const auto& import : document["imports"].GetArray()) {
+			for (const auto& importJson : document["imports"].GetArray()) {
 				DynamicLinkImportModel dynamicLinkImport{
-					import["symbol"].GetString(),
+					importJson.HasMember("architecture") ? importJson["architecture"].GetString() : "amd64",
+					importJson["symbol"].GetString(),
 					{}
 				};
 
-				for (const auto& pointer : import["pointers"].GetArray()) {
+				for (const auto& pointer : importJson["pointers"].GetArray()) {
+					if (!pointer.HasMember("version") || pointer["version"].GetString() == "ignore")
+						continue;
+
 					DynamicLinkImportPointerModel dynamicLinkImportPointer{
 						pointer["version"].GetString(),
 						pointer["type"].GetString(),
@@ -288,35 +319,83 @@ namespace DynaLink {
 				}
 				dynamicLinkModule.imports.push_back(dynamicLinkImport);
 			}
-			moduleResult.parsedDynamicLinkModules.push_back(dynamicLinkModule);
-			LOG_TRACE("[DynamicLinkLibLoader] Loaded dynamic link file '{}' for '{}'...", dynamicLinkFileName, moduleName);
+			moduleResult->parsedDynamicLinkModules.push_back(dynamicLinkModule);
+			LOG_TRACE("Loaded dynamic link file '{}' for '{}'...", dynamicLinkFileName, moduleName);
 		}
 
-		if (DynamicallyLinkModule(moduleResult)) {
-			for (const auto& descriptor : moduleResult.dynamicLinkModuleDescriptors) {
-				if (std::find(moduleResult.linkedDynamicModules.begin(), moduleResult.linkedDynamicModules.end(), descriptor) != moduleResult.linkedDynamicModules.end()) {
-					LOG_TRACE("[DynamicLinkLibLoader] Sucessfully dynamically linked module '{}' for '{}'.", descriptor.GetImportModuleName(), moduleName);
+		if (DynamicallyLinkModule(*moduleResult)) {
+			for (const auto& descriptor : moduleResult->dynamicLinkModuleDescriptors) {
+				if (std::find(moduleResult->linkedDynamicModules.begin(), moduleResult->linkedDynamicModules.end(), descriptor) != moduleResult->linkedDynamicModules.end()) {
+					LOG_TRACE("Sucessfully dynamically linked module '{}' for '{}'.", descriptor.GetImportModuleName(), moduleName);
 					for (const auto& import : descriptor.importDescriptors) {
-						if (std::find(moduleResult.linkedDynamicImports.begin(), moduleResult.linkedDynamicImports.end(), import) != moduleResult.linkedDynamicImports.end()) {
-							LOG_TRACE("[DynamicLinkLibLoader]   Sucessfully imported symbol '{}' pointing to 0x{:x}.", import.importName, import.ReadAddress());
+						if (std::find(moduleResult->linkedDynamicImports.begin(), moduleResult->linkedDynamicImports.end(), import) != moduleResult->linkedDynamicImports.end()) {
+							LOG_TRACE("  Sucessfully imported symbol '{}' pointing to 0x{:x}.", import.importName, import.ReadAddress());
 						}
 						else {
-							LOG_WARN("[DynamicLinkLibLoader]   Failed to import symbol, expect crashes trying to use this '{}'.", import.importName);
+							LOG_WARN("  Failed to import symbol, expect crashes trying to use this '{}'.", import.importName);
 						}
 					}
 				}
 				else {
-					LOG_WARN("[DynamicLinkLibLoader] Failed to link module '{}' for '{}', expect crashes trying to use those: ", descriptor.GetImportModuleName(), moduleName);
+					LOG_WARN("Failed to link module '{}' for '{}', expect crashes trying to use those: ", descriptor.GetImportModuleName(), moduleName);
 					for (const auto& import : descriptor.importDescriptors) {
-						LOG_WARN("[DynamicLinkLibLoader]   Symbol '{}'.", import.importName);
+						LOG_WARN("  Symbol '{}'.", import.importName);
 					}
 				}
 			}
 		}
 		else {
-			LOG_ERROR("[DynamicLinkLibLoader] Failed to link dynamic modules for '{}'.", moduleName);
-			LOG_ERROR("[DynamicLinkLibLoader] Expect pretty BAD crashes trying to use any dynamically linked function.");
+			LOG_ERROR("Failed to link dynamic modules for '{}'.", moduleName);
+			LOG_ERROR("Expect pretty BAD crashes trying to use any dynamically linked function.");
 		}
 		return moduleResult;
+	}
+
+	void WINAPI Loader::OnLoadLibraryA(const char* name) {
+		
+	}
+
+	void WINAPI Loader::OnFreeLibrary(HMODULE library) {
+		char path[MAX_PATH];
+		if (!GetModuleFileNameA(library, path, MAX_PATH)) {
+			return;
+		}
+		std::string name = fs::path(path).filename().string();
+
+		auto it = std::find_if(loadedDynamicModules.begin(), loadedDynamicModules.end(), [library](const std::shared_ptr<DynamicModule>& module) {
+			return module->GetBaseAddress() == reinterpret_cast<uintptr_t>(library);
+		});
+
+		LOG_TRACE("Unloading module '{}'...", name);
+		for (auto& loadedModule : loadedDynamicModules) {
+			for (auto& moduleDescriptor : loadedModule->dynamicLinkModuleDescriptors) {
+				if (std::find(loadedModule->linkedDynamicModules.begin(), loadedModule->linkedDynamicModules.end(), moduleDescriptor) != loadedModule->linkedDynamicModules.end()) {
+					LOG_TRACE("Unlinking module '{}' from '{}'.", moduleDescriptor.GetImportModuleName(), name);
+					for (auto& importDescriptor : moduleDescriptor.importDescriptors) {
+						if (std::find(loadedModule->linkedDynamicImports.begin(), loadedModule->linkedDynamicImports.end(), importDescriptor) != loadedModule->linkedDynamicImports.end()) {
+							LOG_TRACE("  Unlinking symbol '{}' pointing from 0x{:x} to 0x0.", importDescriptor.importName, importDescriptor.ReadAddress());
+							importDescriptor.WriteAddress(0);
+						}
+					}
+				}
+			}
+
+			for (auto it = loadedModule->linkedDynamicModules.begin(); it != loadedModule->linkedDynamicModules.end(); ) {
+				if ([&name](const DynamicLinkModuleDescriptor& moduleDesc) {
+					return moduleDesc.GetImportModuleName() == name;
+				}(*it)) {
+					it = loadedModule->linkedDynamicModules.erase(it);
+				}
+				else {
+					++it;
+				}
+			}
+		}
+	}
+
+	bool Loader::IsModuleValid(HMODULE moduleHandle) {
+		char path[MAX_PATH];
+		DWORD result = GetModuleFileNameA(moduleHandle, path, sizeof(path));
+		return result != 0 && GetLastError() != ERROR_INVALID_PARAMETER;
 	}
 }
