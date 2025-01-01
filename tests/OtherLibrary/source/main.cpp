@@ -11,7 +11,6 @@ extern "C" __declspec(dllexport) void PrintFromOtherLibrary() {
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved) {
 	if (ul_reason_for_call == DLL_PROCESS_ATTACH) {
 		LOG_TRACE("Loaded other library.");
-		LOG_TRACE("Size of std::string is 0x{:x}", sizeof(std::string));
 		LOG_TRACE("&PrintFromOtherLibrary is 0x{:x} <- (0x{:x} + 0x{:x})", reinterpret_cast<uintptr_t>(&PrintFromOtherLibrary), reinterpret_cast<uintptr_t>(hModule), reinterpret_cast<uintptr_t>(&PrintFromOtherLibrary) - reinterpret_cast<uintptr_t>(hModule));
 	}
 	return TRUE;

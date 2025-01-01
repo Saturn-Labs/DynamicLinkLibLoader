@@ -391,6 +391,10 @@ namespace DynaLink {
 				}
 			}
 		}
+
+		if (it != loadedDynamicModules.end()) {
+			loadedDynamicModules.erase(it);
+		}
 	}
 
 	bool Loader::IsModuleValid(HMODULE moduleHandle) {

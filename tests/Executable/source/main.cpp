@@ -36,19 +36,20 @@ namespace DynaLink {
 
 #ifdef _WIN64
 #define SYMBOL_FOR_LIBLOADER_LOAD "?LoadDynamicLinkLibrary@Loader@DynaLink@@SA?AV?$weak_ptr@UDynamicModule@DynaLink@@@std@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@4@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@4@@Z"
+#define DYNALINK_DLL "dynalink64.dll"
 #else
-#define SYMBOL_FOR_LIBLOADER_LOAD "?LoadDynamicLinkLibrary@Loader@DynaLink@@SA?AUDynamicModule@2@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@ABV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@5@@Z"
+#define SYMBOL_FOR_LIBLOADER_LOAD "?LoadDynamicLinkLibrary@Loader@DynaLink@@SA?AV?$weak_ptr@UDynamicModule@DynaLink@@@std@@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@4@ABV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@4@@Z"
+#define DYNALINK_DLL "dynalink32.dll"
 #endif
 
 int main() {
 	uint64_t baseAddress = reinterpret_cast<uint64_t>(GetModuleHandle(nullptr));
 	LOG_TRACE("Base address is 0x{:x}", baseAddress);
-	LOG_TRACE("Size of std::string is 0x{:x}", sizeof(std::string));
 	LOG_TRACE("&DataClass::PrintData is 0x{:x}", reinterpret_cast<uint64_t>(&DataClass::PrintData) - baseAddress);
-	LOG_TRACE("Loading dynalink64.dll...");
-	auto libLoader = LoadLibrary("dynalink64.dll");
+	LOG_TRACE("Loading {}...", DYNALINK_DLL);
+	auto libLoader = LoadLibrary(DYNALINK_DLL);
 	if (libLoader == nullptr) {
-		LOG_ERROR("Failed to load dynalink64.dll.");
+		LOG_ERROR("Failed to load {}.", DYNALINK_DLL);
 		return 1;
 	}
 
