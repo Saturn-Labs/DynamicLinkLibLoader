@@ -1,8 +1,8 @@
-#include <Models/DynamicLinkModuleModel.hpp>
+#include <Models/DynamicImportModel.hpp>
 #include <Common/Common.hpp>
 
 namespace DynaLink {
-    std::string DynamicLinkModuleModel::GetSchema() {
+    std::string DynamicImportModel::GetSchema() {
         return R"(
         {
             "$id": "dynamic-linker-symbol-file",
@@ -12,7 +12,7 @@ namespace DynaLink {
                 "target": {
                     "type": "string"
                 },
-                "imports": {
+                "symbols": {
                     "type": "array",
                     "items": {
                         "type": "object",

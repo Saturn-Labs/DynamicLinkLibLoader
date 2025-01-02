@@ -2,7 +2,7 @@
   "configurations": [
     {
       "name": "RelWithDebInfo (amd64)",
-      "generator": "Ninja",
+      "generator": "Visual Studio 17 2022 Win64",
       "configurationType": "RelWithDebInfo",
       "inheritEnvironments": [ "msvc_x64" ],
       "buildRoot": "${projectDir}\\out\\build\\${name}",
@@ -16,11 +16,12 @@
           "value": "C:/Users/rydev/Documents/GitHub/DynamicLinkLibLoader/out/install/RelWithDebInfo (amd64)",
           "type": "PATH"
         }
-      ]
+      ],
+      "intelliSenseMode": "windows-msvc-x64"
     },
     {
       "name": "RelWithDebInfo (i386)",
-      "generator": "Ninja",
+      "generator": "Visual Studio 17 2022",
       "configurationType": "RelWithDebInfo",
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
@@ -34,7 +35,8 @@
           "value": "C:/Users/rydev/Documents/GitHub/DynamicLinkLibLoader/out/install/RelWithDebInfo (i386)",
           "type": "PATH"
         }
-      ]
+      ],
+      "intelliSenseMode": "windows-msvc-x86"
     }
   ]
 }

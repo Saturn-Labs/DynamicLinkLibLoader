@@ -6,7 +6,7 @@
         "target": {
             "type": "string"
         },
-        "imports": {
+        "symbols": {
             "type": "array",
             "items": {
                 "type": "object",
@@ -60,5 +60,5 @@
             }
         }
     },
-    "required": ["target", "imports"]
+    "required": ["target", "symbols"]
 }

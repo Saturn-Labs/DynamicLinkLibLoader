@@ -2,7 +2,7 @@
 #include <string>
 
 namespace DynaLink {
-	struct DynamicLinkImportPointerModel {
+	struct DynamicSymbolPointerModel {
 		std::string version;
 		std::string type;
 		std::string value;

@@ -3,6 +3,8 @@
 #include <Loader/Loader.hpp>
 #include <Common/Log.hpp>
 #include <MinHook.h>
+#include <winternl.h>
+#include <ntstatus.h>
 
 namespace DynaLink::Hooks {
 	inline static HMODULE(WINAPI*__LoadLibraryA)(const char*) = nullptr;

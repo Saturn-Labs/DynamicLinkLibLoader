@@ -1,16 +1,16 @@
 #pragma once
 #include <string>
-#include "DynamicLinkImportModel.hpp"
+#include "DynamicSymbolModel.hpp"
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/document.h>
 #include <rapidjson/schema.h>
 namespace json = rapidjson;
 
 namespace DynaLink {
-    struct DynamicLinkModuleModel {
+    struct DynamicImportModel {
         std::string descriptorPath;
         std::string target;
-        std::vector<DynamicLinkImportModel> imports;
+        std::vector<DynamicSymbolModel> symbols;
 
         static std::string GetSchema();
         static json::SchemaDocument& GetSchemaDocument() {
