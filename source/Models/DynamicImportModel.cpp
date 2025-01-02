@@ -13,11 +13,19 @@ namespace DynaLink {
                 "target": {
                     "type": "string"
                 },
+                "default_version": {
+                    "type": "string",
+                    "value": { "pattern": "^(ignore|(\\d+|\\*)(\\.(\\d+|\\*)){0,3})$" }
+                },
                 "symbols": {
                     "type": "array",
                     "items": {
                         "type": "object",
                         "properties": {
+                            "version": {
+                                "type": "string",
+                                "value": { "pattern": "^(ignore|(\\d+|\\*)(\\.(\\d+|\\*)){0,3})$" }
+                            },
                             "architecture": {
                                 "type": "string",
                                 "enum": ["amd64", "x64", "x86_64", "x86", "i386"]
@@ -30,9 +38,6 @@ namespace DynaLink {
                                 "items": {
                                     "type": "object",
                                     "properties": {
-                                        "version": {
-                                            "type": "string"
-                                        },
                                         "type": {
                                             "type": "string",
                                             "enum": ["offset", "pattern"]
@@ -67,7 +72,7 @@ namespace DynaLink {
                     }
                 }
             },
-            "required": ["target", "imports"]
+            "required": ["target", "symbols"]
         })";
     }
 
