@@ -9,13 +9,13 @@ namespace DynaLink {
 		uintptr_t* importAddressTableEntry, 
 		IMAGE_IMPORT_BY_NAME* importByName, 
 		const std::string& symbol) :
-		importDescriptor(importDescriptor),
+		importDescriptor(&importDescriptor),
 		importLookupTableEntry(importLookupTableEntry),
 		importAddressTableEntry(importAddressTableEntry),
 		importByName(importByName),
 		symbol(symbol) {}
 
-	std::optional<DynamicSymbolDescriptor&> DynamicSymbolDescriptor::EmplaceInto(DynamicImportDescriptor& importDescriptor, size_t entryIndex) {
+	std::optional<std::reference_wrapper<DynamicSymbolDescriptor>> DynamicSymbolDescriptor::EmplaceInto(DynamicImportDescriptor& importDescriptor, size_t entryIndex) {
 		if (!importDescriptor.IsValid()) {
 			assert(false, "Import descriptor is not valid.");
 			return std::nullopt;
@@ -50,7 +50,7 @@ namespace DynaLink {
 
 	bool DynamicSymbolDescriptor::IsValid() const
 	{
-		return importDescriptor.IsValid();
+		return importDescriptor->IsValid();
 	}
 
 	DynamicSymbolDescriptor::operator bool() const
@@ -113,7 +113,7 @@ namespace DynaLink {
 		}
 
 		return 
-			&importDescriptor == &other.importDescriptor && 
+			importDescriptor == other.importDescriptor && 
 			symbol == other.symbol && 
 			importLookupTableEntry == other.importLookupTableEntry && 
 			importAddressTableEntry == other.importAddressTableEntry;

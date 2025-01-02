@@ -52,6 +52,7 @@ target_include_directories(DynamicLinkLibLoader PRIVATE "${CMAKE_SOURCE_DIR}/ven
 target_compile_definitions(DynamicLinkLibLoader PRIVATE TARGET_LOG_NAME="dynaldr${ARCH_BITS}")
 target_link_libraries(DynamicLinkLibLoader PRIVATE "${CMAKE_SOURCE_DIR}/vendor/minhook/lib/libMinHook-${ARCH_NAME}-v141-mtd.lib")
 set_target_properties(DynamicLinkLibLoader PROPERTIES OUTPUT_NAME "dynaldr${ARCH_BITS}")
+target_compile_options(DynamicLinkLibLoader PRIVATE /Od)
 
 if(ENABLE_TESTS)
     add_subdirectory(tests/Executable)

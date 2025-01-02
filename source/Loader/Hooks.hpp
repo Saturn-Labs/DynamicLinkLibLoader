@@ -1,6 +1,5 @@
 #pragma once
 #include <windows.h>
-#include <Loader/Loader.hpp>
 #include <Common/Log.hpp>
 #include <MinHook.h>
 #include <winternl.h>
@@ -9,13 +8,13 @@
 namespace DynaLink::Hooks {
 	inline static HMODULE(WINAPI*__LoadLibraryA)(const char*) = nullptr;
 	static HMODULE WINAPI _LoadLibraryA(const char* name) {
-		Loader::OnLoadLibraryA(name);
+		//Loader::OnLoadLibraryA(name);
 		return __LoadLibraryA(name);
 	}
 
 	inline static BOOL(WINAPI*__FreeLibrary)(HMODULE) = nullptr;
 	static BOOL WINAPI _FreeLibrary(HMODULE library) {
-		Loader::OnFreeLibrary(library);
+		//Loader::OnFreeLibrary(library);
 		return __FreeLibrary(library);
 	}
 

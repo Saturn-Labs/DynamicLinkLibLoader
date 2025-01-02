@@ -1,10 +1,10 @@
-#include "Loader/DynamicHandle.hpp"
 #include <windows.h>
-#include "Models/DynamicLinkModuleModel.hpp"
+#include "Loader/DynamicHandle.hpp"
 #include "Loader/DynamicLinker.hpp"
-#include "Loader/Loader.hpp"
 #include "Common/ModuleUtils.hpp"
-#include <memory>
+#include "Descriptors/DynamicImportDescriptor.hpp"
+#include "Descriptors/DynamicSymbolDescriptor.hpp"
+#include "Models/DynamicImportModel.hpp"
 
 namespace DynaLink
 {
@@ -12,8 +12,9 @@ namespace DynaLink
 		HMODULE handle, 
 		const std::string& file) : 
 		originalHandle(handle), 
-		moduleFile(file) {
-	}
+		moduleFile(file),
+		parsedDynamicImports({}),
+		dynamicImportDescriptors({}) {}
 
 	bool DynamicHandle::IsValid() const
 	{
@@ -35,11 +36,11 @@ namespace DynaLink
 		return fs::path(moduleFile).filename().string();
 	}
 
-	const DynamicLinkModuleModelMap& DynamicHandle::GetParsedDynamicLinkModules() const {
-		return parsedDynamicLinkModules;
+	const DynamicImportModelMap& DynamicHandle::GetParsedDynamicImports() const {
+		return parsedDynamicImports;
 	}
-	DynamicLinkModuleModelMap& DynamicHandle::GetParsedDynamicLinkModules() {
-		return parsedDynamicLinkModules;
+	DynamicImportModelMap& DynamicHandle::GetParsedDynamicImports() {
+		return parsedDynamicImports;
 	}
 	const DynamicImportDescriptorMap& DynamicHandle::GetDynamicImportDescriptors() const
 	{

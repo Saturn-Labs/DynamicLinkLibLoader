@@ -1,14 +1,16 @@
 #pragma once
 #include "Common/Common.hpp"
 #include "Enums/DynamicLinkResult.hpp"
+#include "Models/DynamicImportModel.hpp"
+#include "Descriptors/DynamicImportDescriptor.hpp"
 #include <windows.h>
 
 namespace DynaLink {
-	struct DynamicLinkModuleModel;
-	struct DynamicImportDescriptor;
+	struct DynamicImportModel;
+	class DynamicImportDescriptor;
 
 	using DynamicImportDescriptorMap = std::unordered_map<std::string, DynamicImportDescriptor>;
-	using DynamicLinkModuleModelMap = std::unordered_map<std::string, DynamicLinkModuleModel>;
+	using DynamicImportModelMap = std::unordered_map<std::string, DynamicImportModel>;
 
 	class LOADER_API DynamicHandle {
 	public:
@@ -18,8 +20,8 @@ namespace DynaLink {
 		std::string GetFile() const;
 		std::string GetModuleName() const;
 
-		const DynamicLinkModuleModelMap& GetParsedDynamicLinkModules() const;
-		DynamicLinkModuleModelMap& GetParsedDynamicLinkModules();
+		const DynamicImportModelMap& GetParsedDynamicImports() const;
+		DynamicImportModelMap& GetParsedDynamicImports();
 		const DynamicImportDescriptorMap& GetDynamicImportDescriptors() const;
 		DynamicImportDescriptorMap& GetDynamicImportDescriptors();
 
@@ -47,7 +49,7 @@ namespace DynaLink {
 		DynamicLinkResult dynamicLinkResult = DynamicLinkResult::Unlinked;
 		bool isLoaded = false;
 
-		DynamicLinkModuleModelMap parsedDynamicLinkModules = {};
-		DynamicImportDescriptorMap dynamicImportDescriptors = {};
+		DynamicImportModelMap parsedDynamicImports;
+		DynamicImportDescriptorMap dynamicImportDescriptors;
 	};
 }

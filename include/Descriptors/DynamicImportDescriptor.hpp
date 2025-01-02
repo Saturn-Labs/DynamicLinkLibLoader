@@ -1,4 +1,5 @@
 #pragma once
+#include "Descriptors/DynamicSymbolDescriptor.hpp"
 #include "Common/Common.hpp"
 #include <windows.h>
 
@@ -9,7 +10,7 @@ namespace DynaLink {
 	public:
 		using SymbolMap = std::unordered_map<std::string, DynamicSymbolDescriptor>;
 
-		static std::optional<DynamicImportDescriptor&> EmplaceInto(const std::weak_ptr<DynamicHandle>& handle, IMAGE_SECTION_HEADER* dlinkSection, size_t indexOfDescriptor);
+		static std::optional<std::reference_wrapper<DynamicImportDescriptor>> EmplaceInto(const std::weak_ptr<DynamicHandle>& handle, IMAGE_SECTION_HEADER* dlinkSection, size_t indexOfDescriptor);
 
 		bool IsValid() const;
 		operator bool() const;
@@ -23,14 +24,10 @@ namespace DynaLink {
 		SymbolMap::iterator end();
 		const DynamicSymbolDescriptor& operator[](const std::string& symbol) const;
 		DynamicSymbolDescriptor& operator[](const std::string& symbol);
+		DynamicImportDescriptor(const std::weak_ptr<DynamicHandle>& handle, IMAGE_IMPORT_DESCRIPTOR* importDescriptor, IMAGE_SECTION_HEADER* dlinkSection, size_t myIndex, size_t symbolCount, const std::string& moduleName);
 
 	private:
-		DynamicImportDescriptor(const std::weak_ptr<DynamicHandle>& handle, IMAGE_IMPORT_DESCRIPTOR* importDescriptor, IMAGE_SECTION_HEADER* dlinkSection, size_t myIndex, size_t symbolCount, const std::string& moduleName);
 		DynamicImportDescriptor() = delete;
-		DynamicImportDescriptor(const DynamicImportDescriptor&) = delete;
-		DynamicImportDescriptor(DynamicImportDescriptor&&) = delete;
-		DynamicImportDescriptor& operator=(const DynamicImportDescriptor&) = delete;
-		DynamicImportDescriptor& operator=(DynamicImportDescriptor&&) = delete;
 
 	private:
 		friend class DynamicHandle;
@@ -42,6 +39,6 @@ namespace DynaLink {
 		size_t myIndex = 0;
 		size_t symbolCount = 0;
 		std::string moduleName = "";
-		SymbolMap symbols = {};
+		SymbolMap symbols;
 	};
 }

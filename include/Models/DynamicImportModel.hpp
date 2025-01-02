@@ -4,6 +4,7 @@
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/document.h>
 #include <rapidjson/schema.h>
+#include <optional>
 namespace json = rapidjson;
 
 namespace DynaLink {
@@ -13,16 +14,8 @@ namespace DynaLink {
         std::vector<DynamicSymbolModel> symbols;
 
         static std::string GetSchema();
-        static json::SchemaDocument& GetSchemaDocument() {
-            static bool initialized = false;
-            static json::Document document;
-            if (!initialized) {
-                document.Parse(GetSchema().c_str());
-                initialized = true;
-            }
-
-            static json::SchemaDocument schemaDocument(document);
-            return schemaDocument;
-        }
+        static json::SchemaDocument& GetSchemaDocument();
+        static std::optional<DynamicImportModel> ParseFromContents(const std::string& contents);
+        static std::optional<DynamicImportModel> ParseFromFile(const std::string& path);
     };
 }

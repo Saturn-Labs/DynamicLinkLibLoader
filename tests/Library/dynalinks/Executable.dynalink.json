@@ -1,0 +1,50 @@
+{
+    "$schema": "https://raw.githubusercontent.com/Saturn-Labs/DynamicLinkLibLoader/refs/heads/dev/schemas/dynamic-linker-symbol-file.schema.json",
+    "target": "Executable.exe",
+    "symbols": [
+        {
+            "architecture": "amd64",
+            "symbol": "ExecutablePrintHello",
+            "pointers": [
+                {
+                    "version": "*",
+                    "type": "offset",
+                    "value": "0x0"
+                }
+            ]
+        },
+        {
+            "architecture": "amd64",
+            "symbol": "ExecutablePrintWorld",
+            "pointers": [
+                {
+                    "version": "*",
+                    "type": "offset",
+                    "value": "0x0"
+                }
+            ]
+        },
+        {
+            "architecture": "i386",
+            "symbol": "ExecutablePrintHello",
+            "pointers": [
+                {
+                    "version": "*",
+                    "type": "offset",
+                    "value": "0x0"
+                }
+            ]
+        },
+        {
+            "architecture": "i386",
+            "symbol": "ExecutablePrintWorld",
+            "pointers": [
+                {
+                    "version": "*",
+                    "type": "offset",
+                    "value": "0x0"
+                }
+            ]
+        }
+    ]
+}

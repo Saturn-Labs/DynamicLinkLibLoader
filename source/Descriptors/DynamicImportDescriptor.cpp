@@ -17,7 +17,7 @@ namespace DynaLink {
 		symbolCount(symbolCount),
 		moduleName(moduleName) {}
 
-	std::optional<DynamicImportDescriptor&> DynamicImportDescriptor::EmplaceInto(const std::weak_ptr<DynamicHandle>& handle, IMAGE_SECTION_HEADER* dlinkSection, size_t indexOfDescriptor)
+	std::optional<std::reference_wrapper<DynamicImportDescriptor>> DynamicImportDescriptor::EmplaceInto(const std::weak_ptr<DynamicHandle>& handle, IMAGE_SECTION_HEADER* dlinkSection, size_t indexOfDescriptor)
 	{
 		if (handle.expired()) {
 			assert(false, "Handle was expired.");

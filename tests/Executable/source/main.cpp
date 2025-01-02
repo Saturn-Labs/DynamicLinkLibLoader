@@ -21,13 +21,13 @@ int main() {
 		return 1;
 	}
 
-	auto LoadDynamicLinkLibrary = reinterpret_cast<HMODULE(*)(const std::string& moduleName, const std::vector<std::string>& dynamicLinkingFiles)>(GetProcAddress(libLoader, "LoadDynamicLinkLibrary"));
+	auto LoadDynamicLinkLibrary = reinterpret_cast<HMODULE(*)(const std::string& moduleName, const std::vector<std::string>& dynamicLinkingFiles, uint32_t* result)>(GetProcAddress(libLoader, "LoadDynamicLinkLibrary"));
 	if (LoadDynamicLinkLibrary == nullptr) {
 		LOG_ERROR("Failed to get LoadDynamicLinkLibrary function.");
 		return 1;
 	}
-	LoadDynamicLinkLibrary("./Library.dll", {});
-	FreeLibrary(GetModuleHandleA("Library.dll"));
+	LoadDynamicLinkLibrary("./Library.dll", {}, nullptr);
+	//FreeLibrary(GetModuleHandleA("Library.dll"));
 	std::cin.get();
 	return 0;
 }

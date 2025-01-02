@@ -10,6 +10,7 @@
 #include <rapidjson/rapidjson.h>
 #include <unordered_map>
 #include <optional>
+#include <fstream>
 #define STRINGIFY(...) #__VA_ARGS__
 #define STR(...) STRINGIFY(__VA_ARGS__)
 
