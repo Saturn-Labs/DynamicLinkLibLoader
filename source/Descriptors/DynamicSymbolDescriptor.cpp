@@ -1,6 +1,7 @@
 #include "Descriptors/DynamicSymbolDescriptor.hpp"
 #include "Descriptors/DynamicImportDescriptor.hpp"
 #include "Loader/DynamicHandle.hpp"
+#include "Common/Log.hpp"
 
 namespace DynaLink {
 	DynamicSymbolDescriptor::DynamicSymbolDescriptor(
@@ -101,7 +102,31 @@ namespace DynaLink {
 
 	void DynamicSymbolDescriptor::ProtectImportAddressTableEntry(DWORD protection) const
 	{
-		if (!VirtualProtect(importAddressTableEntry, sizeof(uintptr_t), protection, nullptr)) {
+		DWORD oldProtection;
+		MEMORY_BASIC_INFORMATION memInfo;
+		if (!VirtualQuery(importAddressTableEntry, &memInfo, sizeof(memInfo))) {
+			DWORD lastError = GetLastError();
+			char* errorMessage = nullptr;
+			FormatMessageA(
+				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+				nullptr,
+				lastError,
+				0,
+				(LPSTR)&errorMessage,
+				0,
+				nullptr
+			);
+			assert(false, "VirtualQuery failed. Error: {}", errorMessage);
+			LocalFree(errorMessage);
+			return;
+		}
+
+		if (memInfo.State != MEM_COMMIT || memInfo.Protect == PAGE_NOACCESS) {
+			assert(false, "Memory region is not committed or is protected with PAGE_NOACCESS.");
+			return;
+		}
+
+		if (!VirtualProtect(importAddressTableEntry, sizeof(uintptr_t), protection, &oldProtection)) {
 			DWORD lastError = GetLastError();
 			char* errorMessage = nullptr;
 			FormatMessageA(
@@ -114,8 +139,8 @@ namespace DynaLink {
 				nullptr
 			);
 
-			// TODO: Fix
-			assert(false, "Failed to protect import address table entry. {}", errorMessage);
+			assert(false, "Failed to protect import address table entry. Error: {}", errorMessage);
+			LocalFree(errorMessage);
 		}
 	}
 

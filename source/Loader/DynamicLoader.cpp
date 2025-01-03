@@ -76,6 +76,7 @@ namespace DynaLink {
 				nullptr
 			);
 			LOG_ERROR("Failed to load module '{}', windows internal error 0x{:x} '{}'...", moduleName, lastError, const_cast<const char*>(errorMessage));
+			LocalFree(errorMessage);
 			return {};
 		}
 

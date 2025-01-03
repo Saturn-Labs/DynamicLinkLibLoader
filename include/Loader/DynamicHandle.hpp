@@ -4,13 +4,11 @@
 #include "Models/DynamicImportModel.hpp"
 #include "Descriptors/DynamicImportDescriptor.hpp"
 #include <windows.h>
+#include <ranges>
 
 namespace DynaLink {
 	struct DynamicImportModel;
 	class DynamicImportDescriptor;
-
-	using DynamicImportDescriptorMap = std::unordered_map<std::string, DynamicImportDescriptor>;
-	using DynamicImportModelMap = std::unordered_map<std::string, DynamicImportModel>;
 
 	class LOADER_API DynamicHandle {
 	public:
@@ -23,10 +21,13 @@ namespace DynaLink {
 		uintptr_t GetEntryPoint() const;
 		void DisableEntryPointDelayRedirection();
 
-		const DynamicImportModelMap& GetParsedDynamicImports() const;
-		DynamicImportModelMap& GetParsedDynamicImports();
-		const DynamicImportDescriptorMap& GetDynamicImportDescriptors() const;
-		DynamicImportDescriptorMap& GetDynamicImportDescriptors();
+		const DynamicImportModel::Unordered& GetParsedDynamicImports() const;
+		DynamicImportModel::Unordered& GetParsedDynamicImports();
+		const DynamicImportDescriptor::Unordered& GetDynamicImportDescriptors() const;
+		DynamicImportDescriptor::Unordered& GetDynamicImportDescriptors();
+
+		DynamicSymbolModel::Unordered GetParsedDynamicSymbols() const;
+		DynamicSymbolDescriptor::Unordered GetDynamicSymbolDescriptors() const;
 
 		DynamicLinkResult GetDynamicLinkResult() const;
 		void SetDynamicLinkResult(DynamicLinkResult result);
@@ -52,7 +53,7 @@ namespace DynaLink {
 		DynamicLinkResult dynamicLinkResult = DynamicLinkResult::Unlinked;
 		bool isLoaded = false;
 
-		DynamicImportModelMap parsedDynamicImports;
-		DynamicImportDescriptorMap dynamicImportDescriptors;
+		DynamicImportModel::Unordered parsedDynamicImports;
+		DynamicImportDescriptor::Unordered dynamicImportDescriptors;
 	};
 }

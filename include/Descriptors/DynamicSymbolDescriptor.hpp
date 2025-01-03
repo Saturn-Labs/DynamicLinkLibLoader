@@ -6,6 +6,8 @@ namespace DynaLink {
 	class DynamicImportDescriptor;
 	class LOADER_API DynamicSymbolDescriptor {
 	public:
+		using Unordered = std::unordered_map<std::string, DynamicSymbolDescriptor>;
+
 		static std::optional<std::reference_wrapper<DynamicSymbolDescriptor>> EmplaceInto(DynamicImportDescriptor& importDescriptor, size_t entryIndex);
 
 		bool IsValid() const;

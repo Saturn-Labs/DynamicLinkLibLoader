@@ -13,6 +13,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 		LOG_TRACE("Loaded library.");
 		LOG_TRACE("Function ExecutablePrintHello 0x{:x}", (uintptr_t)&ExecutablePrintHello);
 		LOG_TRACE("Function ExecutablePrintWorld 0x{:x}", (uintptr_t)&ExecutablePrintWorld);
+		ExecutablePrintHello();
+		ExecutablePrintWorld();
 	}
 	return TRUE;
 }

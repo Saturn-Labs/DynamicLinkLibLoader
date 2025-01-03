@@ -1,6 +1,7 @@
 #include "Loader/DynamicLinker.hpp"
 #include "Loader/DynamicHandle.hpp"
 #include "Descriptors/DynamicImportDescriptor.hpp"
+#include "Models/DynamicSymbolModel.hpp"
 #include "Common/ArchUtils.hpp"
 #include "Common/ModuleUtils.hpp"
 #include "Common/Log.hpp"
@@ -89,6 +90,7 @@ namespace DynaLink {
 				}
 			}
 		}
+
 		return DynamicLinkingResult::Success;
 	}
 }

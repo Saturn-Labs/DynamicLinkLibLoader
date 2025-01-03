@@ -80,32 +80,32 @@ namespace DynaLink {
 		return IsValid();
 	}
 
-	const DynamicImportDescriptor::SymbolMap& DynamicImportDescriptor::GetSymbols() const
+	const DynamicSymbolDescriptor::Unordered& DynamicImportDescriptor::GetSymbols() const
 	{
 		return symbols;
 	}
 
-	DynamicImportDescriptor::SymbolMap& DynamicImportDescriptor::GetSymbols()
+	DynamicSymbolDescriptor::Unordered& DynamicImportDescriptor::GetSymbols()
 	{
 		return symbols;
 	}
 
-	DynamicImportDescriptor::SymbolMap::const_iterator DynamicImportDescriptor::begin() const
+	DynamicSymbolDescriptor::Unordered::const_iterator DynamicImportDescriptor::begin() const
 	{
 		return symbols.begin();
 	}
 
-	DynamicImportDescriptor::SymbolMap::const_iterator DynamicImportDescriptor::end() const
+	DynamicSymbolDescriptor::Unordered::const_iterator DynamicImportDescriptor::end() const
 	{
 		return symbols.end();
 	}
 
-	DynamicImportDescriptor::SymbolMap::iterator DynamicImportDescriptor::begin()
+	DynamicSymbolDescriptor::Unordered::iterator DynamicImportDescriptor::begin()
 	{
 		return symbols.begin();
 	}
 
-	DynamicImportDescriptor::SymbolMap::iterator DynamicImportDescriptor::end()
+	DynamicSymbolDescriptor::Unordered::iterator DynamicImportDescriptor::end()
 	{
 		return symbols.end();
 	}

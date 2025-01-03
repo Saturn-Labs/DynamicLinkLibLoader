@@ -10,10 +10,12 @@ namespace json = rapidjson;
 
 namespace DynaLink {
     struct DynamicImportModel {
+        using Unordered = std::unordered_map<std::string, DynamicImportModel>;
+
         std::string descriptorPath;
         std::string target;
         std::string defaultVersion;
-        std::unordered_map<std::string, DynamicSymbolModel> symbols;
+        DynamicSymbolModel::Unordered symbols;
 
         static std::string GetSchema();
         static json::SchemaDocument& GetSchemaDocument();

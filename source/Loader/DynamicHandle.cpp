@@ -5,6 +5,7 @@
 #include "Descriptors/DynamicImportDescriptor.hpp"
 #include "Descriptors/DynamicSymbolDescriptor.hpp"
 #include "Models/DynamicImportModel.hpp"
+#include <ranges>
 
 namespace DynaLink
 {
@@ -90,22 +91,41 @@ namespace DynaLink
 		DWORD oldProtection = 0;
 		VirtualProtect(&ntHeaders->OptionalHeader.AddressOfEntryPoint, sizeof(ntHeaders->OptionalHeader.AddressOfEntryPoint), PAGE_READWRITE, &oldProtection);
 		ntHeaders->OptionalHeader.AddressOfEntryPoint = GetEntryPoint() - GetBaseAddress();
-		VirtualProtect(&ntHeaders->OptionalHeader.AddressOfEntryPoint, sizeof(ntHeaders->OptionalHeader.AddressOfEntryPoint), oldProtection, nullptr);
+		VirtualProtect(&ntHeaders->OptionalHeader.AddressOfEntryPoint, sizeof(ntHeaders->OptionalHeader.AddressOfEntryPoint), oldProtection, &oldProtection);
 	}
 
-	const DynamicImportModelMap& DynamicHandle::GetParsedDynamicImports() const {
+	const DynamicImportModel::Unordered& DynamicHandle::GetParsedDynamicImports() const {
 		return parsedDynamicImports;
 	}
-	DynamicImportModelMap& DynamicHandle::GetParsedDynamicImports() {
+	DynamicImportModel::Unordered& DynamicHandle::GetParsedDynamicImports() {
 		return parsedDynamicImports;
 	}
-	const DynamicImportDescriptorMap& DynamicHandle::GetDynamicImportDescriptors() const
+	const DynamicImportDescriptor::Unordered& DynamicHandle::GetDynamicImportDescriptors() const
 	{
 		return dynamicImportDescriptors;
 	}
-	DynamicImportDescriptorMap& DynamicHandle::GetDynamicImportDescriptors()
+	DynamicImportDescriptor::Unordered& DynamicHandle::GetDynamicImportDescriptors()
 	{
 		return dynamicImportDescriptors;
+	}
+
+	DynamicSymbolModel::Unordered DynamicHandle::GetParsedDynamicSymbols() const {
+		DynamicSymbolModel::Unordered symbols;
+		for (const auto& [_, import] : GetParsedDynamicImports()) {
+			for (const auto& [_, symbol] : import.symbols) {
+				symbols.emplace(symbol.symbol, symbol);
+			}
+		}
+		return symbols;
+	}
+	DynamicSymbolDescriptor::Unordered DynamicHandle::GetDynamicSymbolDescriptors() const {
+		DynamicSymbolDescriptor::Unordered symbols;
+		for (const auto& [_, import] : GetDynamicImportDescriptors()) {
+			for (const auto& [_, symbol] : import.GetSymbols()) {
+				symbols.emplace(symbol.GetSymbol(), symbol);
+			}
+		}
+		return symbols;
 	}
 
 	DynamicLinkResult DynamicHandle::GetDynamicLinkResult() const {
