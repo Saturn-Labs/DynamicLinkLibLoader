@@ -1,6 +1,7 @@
 #include <Models/DynamicImportModel.hpp>
 #include <Common/Common.hpp>
 #include <Common/Log.hpp>
+#include "Common/ArchUtils.hpp"
 
 namespace DynaLink {
     std::string DynamicImportModel::GetSchema() {
@@ -33,39 +34,29 @@ namespace DynaLink {
                             "symbol": {
                                 "type": "string"
                             },
-                            "pointers": {
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "type": {
-                                            "type": "string",
-                                            "enum": ["offset", "pattern"]
-                                        },
-                                        "value": {
-                                            "type": "string"
+                            "pointer": {
+                                "properties": {
+                                    "type": { "type": "string", "enum": ["offset", "pattern"] },
+                                    "value": { "type": "string" }
+                                },
+                       	        "required": ["value", "type"],
+                                "oneOf": [
+                                    {
+                                        "properties": {
+                                            "type": { "enum": ["offset"] },
+                                            "value": { "pattern": "^0x[0-9a-fA-F]{1,16}$" }
                                         }
                                     },
-                                    "required": ["value", "type"],
-                                    "oneOf": [
-                                        {
-                                            "properties": {
-                                                "type": { "enum": ["offset"] },
-                                                "value": { "pattern": "^0x[0-9a-fA-F]{1,16}$" }
-                                            }
-                                        },
-                                        {
-                                            "properties": {
-                                                "type": { "enum": ["pattern"] },
-                                                "value": { "pattern": "^([0-9A-Fa-f]{2}|\\?)(( [0-9A-Fa-f]{2}| \\?))*$" }
-                                            }
+                                    {
+                                        "properties": {
+                                            "type": { "enum": ["pattern"] },
+                                            "value": { "pattern": "^([0-9A-Fa-f]{2}|\\?)(( [0-9A-Fa-f]{2}| \\?))*$" }
                                         }
-                                    ]
-                                },
-                                "minItems": 1
+                                    }
+                                ]
                             }
                         },
-                        "required": ["symbol", "pointers"],
+                        "required": ["symbol", "pointer"],
                         "default": {
                             "architecture": "amd64"
                         }
@@ -115,29 +106,25 @@ namespace DynaLink {
 
         DynamicImportModel dynamicImportModel{
             document["target"].GetString(),
+			document.HasMember("default_version") ? document["default_version"].GetString() : "*",
             {}
         };
 
         for (const auto& symbolJson : document["symbols"].GetArray()) {
             DynamicSymbolModel dynamicSymbolModel{
-                symbolJson.HasMember("architecture") ? symbolJson["architecture"].GetString() : "amd64",
+                symbolJson.HasMember("version") ? symbolJson["version"].GetString() : dynamicImportModel.defaultVersion,
+                symbolJson.HasMember("architecture") ? (ArchUtils::IsArchitectureValid(symbolJson["architecture"].GetString()) ? ArchUtils::NormalizeArchitecture(symbolJson["architecture"].GetString()) : "amd64") : "amd64",
                 symbolJson["symbol"].GetString(),
                 {}
             };
 
-            for (const auto& pointerJson : symbolJson["pointers"].GetArray()) {
-                if (!pointerJson.HasMember("version") || pointerJson["version"].GetString() == "ignore")
-                    continue;
-
-                DynamicSymbolPointerModel dynamicSymbolPointerModel{
-                    pointerJson["version"].GetString(),
-                    pointerJson["type"].GetString(),
-                    pointerJson["value"].GetString()
-                };
-
-                dynamicSymbolModel.pointers.push_back(dynamicSymbolPointerModel);
-            }
-            dynamicImportModel.symbols.push_back(dynamicSymbolModel);
+            auto pointerJsonObj = symbolJson["pointer"].GetObject();
+            DynamicSymbolPointerModel dynamicSymbolPointerModel{
+                pointerJsonObj["type"].GetString(),
+                pointerJsonObj["value"].GetString()
+            };
+			dynamicSymbolModel.pointer = dynamicSymbolPointerModel;
+            dynamicImportModel.symbols.insert({ dynamicSymbolModel.symbol, dynamicSymbolModel });
         }
 		return dynamicImportModel;
     }

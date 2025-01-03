@@ -5,8 +5,9 @@
 
 namespace DynaLink {
 	struct DynamicSymbolModel {
+		std::string version;
 		std::string architecture;
 		std::string symbol;
-		std::vector<DynamicSymbolPointerModel> pointers;
+		DynamicSymbolPointerModel pointer;
 	};
 }

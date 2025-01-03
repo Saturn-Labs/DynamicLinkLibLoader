@@ -1,13 +1,13 @@
 {
     "$schema": "https://raw.githubusercontent.com/Saturn-Labs/DynamicLinkLibLoader/refs/heads/dev/schemas/dynamic-linker-symbol-file.schema.json",
     "target": "OtherLibrary.dll",
+    "default_version": "*",
     "symbols": [
         {
             "architecture": "amd64",
             "symbol": "OtherLibraryPrintHello",
             "pointers": [
                 {
-                    "version": "*",
                     "type": "offset",
                     "value": "0x0"
                 }
@@ -18,7 +18,6 @@
             "symbol": "OtherLibraryPrintWorld",
             "pointers": [
                 {
-                    "version": "*",
                     "type": "offset",
                     "value": "0x0"
                 }
@@ -29,7 +28,6 @@
             "symbol": "OtherLibraryPrintHello",
             "pointers": [
                 {
-                    "version": "*",
                     "type": "offset",
                     "value": "0x0"
                 }
@@ -40,7 +38,6 @@
             "symbol": "OtherLibraryPrintWorld",
             "pointers": [
                 {
-                    "version": "*",
                     "type": "offset",
                     "value": "0x0"
                 }

@@ -1,3 +1,5 @@
 add_library(Library SHARED "source/main.cpp")
 target_compile_definitions(Library PRIVATE TARGET_LOG_NAME="Library")
 target_include_directories(Library PRIVATE "${CMAKE_SOURCE_DIR}/include/Common")
+file(GLOB_RECURSE LIBRARIES "library/**.lib")
+target_link_libraries(Library PRIVATE ${LIBRARIES})
