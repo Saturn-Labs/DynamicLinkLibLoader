@@ -1,7 +1,9 @@
 #include "Loader/DynamicLoader.hpp"
 #include "Loader/DynamicHandle.hpp"
+#include "Loader/DynamicLinker.hpp"
 #include "Common/ModuleUtils.hpp"
 #include "Common/Log.hpp"
+#include <future>
 
 namespace DynaLink {
 	std::unordered_map<HMODULE, std::shared_ptr<DynamicHandle>> DynamicLoader::dynamicHandles = {};
@@ -46,8 +48,9 @@ namespace DynaLink {
 			}
 
 			LOG_WARN("Module '{}' module could not be found on the dynamic link module repository, reloading it.", moduleName);
-			std::shared_ptr<DynamicHandle> moduleResult = DynamicHandle::Create(LoadLibraryA(moduleFile.c_str()), fixedModulePath);
+			std::shared_ptr<DynamicHandle> moduleResult = DynamicHandle::Create(LoadLibraryA(moduleFile.c_str()), fixedModulePath, dynamicLinkFiles);
 			dynamicHandles[moduleHandle] = moduleResult;
+			DynamicLinker::LinkAllDynamicImports(moduleResult);
 			*result = DynamicLinkLoadingResult::ModuleReloaded;
 			return moduleResult;
 		}
@@ -76,8 +79,19 @@ namespace DynaLink {
 			return {};
 		}
 
-		std::shared_ptr<DynamicHandle> moduleResult = DynamicHandle::Create(moduleHandle, fixedModulePath);
+		std::shared_ptr<DynamicHandle> moduleResult = DynamicHandle::Create(moduleHandle, fixedModulePath, dynamicLinkFiles);
 		dynamicHandles[moduleHandle] = moduleResult;
+		DynamicLinker::LinkAllDynamicImports(moduleResult);
+		if (moduleResult->HasEntryPointDelaySupport()) {
+			auto dllMain = reinterpret_cast<BOOL(APIENTRY*)(HMODULE, DWORD, LPVOID)>(moduleResult->GetEntryPoint());
+			moduleResult->DisableEntryPointDelayRedirection();
+			std::async(std::launch::async, [&moduleResult, dllMain]() {
+				BOOL result = dllMain(moduleResult->GetHandle(), DLL_PROCESS_ATTACH, nullptr);
+				if (result == FALSE) {
+					FreeLibraryAndExitThread(moduleResult->GetHandle(), moduleResult ? 1 : 0);
+				}
+			});
+		}
 		*result = DynamicLinkLoadingResult::ModuleLoaded;
 		return moduleResult;
 	}

@@ -105,6 +105,7 @@ namespace DynaLink {
         }
 
         DynamicImportModel dynamicImportModel{
+			"unknown",
             document["target"].GetString(),
 			document.HasMember("default_version") ? document["default_version"].GetString() : "*",
             {}

@@ -62,7 +62,8 @@ namespace DynaLink {
 			for (auto& [symbolName, symbolDescriptor] : descriptor.GetSymbols()) {
 				auto symbolIterator = std::find_if(dynamicImportModel.symbols.begin(), dynamicImportModel.symbols.end(), [&symbolName, &targetVersion](const std::pair<std::string, DynamicSymbolModel>& pair) {
 					const auto& [symbol, model] = pair;
-					return symbolName == symbol && targetVersion == Semver(model.version) && model.architecture == ArchUtils::GetArchitectureName();
+					auto version = Semver(model.version);
+					return symbolName == symbol && (version.fullWildcard() || version == targetVersion) && model.architecture == ArchUtils::GetArchitectureName();
 				});
 
 				if (symbolIterator == dynamicImportModel.symbols.end()) {
@@ -72,7 +73,7 @@ namespace DynaLink {
 				auto& [symbol, model] = *symbolIterator;
 				if (model.pointer.type == "offset") {
 					uint64_t offset = std::stoull(model.pointer.value, nullptr, 16);
-					uintptr_t address = reinterpret_cast<uintptr_t>(reinterpret_cast<uintptr_t>(moduleHandle) + offset);
+					uintptr_t address = reinterpret_cast<uintptr_t>(moduleHandle) + offset;
 					symbolDescriptor.WriteAddress(address);
 				}
 				else if (model.pointer.type == "pattern") {
@@ -88,19 +89,6 @@ namespace DynaLink {
 				}
 			}
 		}
-
-		auto linkedModules = dynamicHandle.GetDynamicImportDescriptors() | std::views::filter([](const DynamicImportDescriptorMap::value_type& pair) {
-			const auto& [moduleName, descriptor] = pair;
-			return std::find_if(descriptor.GetSymbols().begin(), descriptor.GetSymbols().end(), [](const DynamicSymbolDescriptor& symbol) {
-				return symbol.IsAddressBound();
-			}) != descriptor.GetSymbols().end();
-		});
-
-		auto linkedSymbols = linkedModules | std::views::transform([](const DynamicImportDescriptorMap::value_type& pair) {
-			const auto& [moduleName, descriptor] = pair;
-			return descriptor.GetSymbols();
-		});
-
 		return DynamicLinkingResult::Success;
 	}
 }

@@ -34,7 +34,7 @@ namespace DynaLink {
 			return std::nullopt;
 		}
 
-		IMAGE_IMPORT_BY_NAME* importByName = reinterpret_cast<IMAGE_IMPORT_BY_NAME*>(*importLookupTableEntry);
+		IMAGE_IMPORT_BY_NAME* importByName = reinterpret_cast<IMAGE_IMPORT_BY_NAME*>(handle.GetBaseAddress() + *importLookupTableEntry);
 		return importDescriptor.symbols.emplace(
 			std::piecewise_construct,
 			std::forward_as_tuple(importByName->Name),
@@ -102,7 +102,20 @@ namespace DynaLink {
 	void DynamicSymbolDescriptor::ProtectImportAddressTableEntry(DWORD protection) const
 	{
 		if (!VirtualProtect(importAddressTableEntry, sizeof(uintptr_t), protection, nullptr)) {
-			assert(false, "Failed to protect import address table entry.");
+			DWORD lastError = GetLastError();
+			char* errorMessage = nullptr;
+			FormatMessageA(
+				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+				nullptr,
+				lastError,
+				0,
+				(LPSTR)&errorMessage,
+				0,
+				nullptr
+			);
+
+			// TODO: Fix
+			assert(false, "Failed to protect import address table entry. {}", errorMessage);
 		}
 	}
 

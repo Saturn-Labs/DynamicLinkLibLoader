@@ -39,8 +39,9 @@ namespace DynaLink {
 		IMAGE_IMPORT_DESCRIPTOR* importDescriptor = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR*>(moduleBase + dlinkSection->VirtualAddress) + indexOfDescriptor;
 		uintptr_t* ilt = reinterpret_cast<uintptr_t*>(moduleBase + importDescriptor->OriginalFirstThunk);
 		uint32_t symbolCount = 0;
-		while ((++ilt) != 0) {
+		while (*ilt != 0) {
 			++symbolCount;
+			++ilt;
 		}
 		std::string moduleName = reinterpret_cast<const char*>(moduleBase + importDescriptor->Name);
 		auto& descriptor = dynamicHandle.GetDynamicImportDescriptors().emplace(

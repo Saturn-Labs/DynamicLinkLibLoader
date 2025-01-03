@@ -36,6 +36,63 @@ namespace DynaLink
 		return fs::path(moduleFile).filename().string();
 	}
 
+	bool DynamicHandle::HasEntryPointDelaySupport() const
+	{
+		if (!IsValid()) {
+			return false;
+		}
+
+		IMAGE_NT_HEADERS* ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS*>(GetBaseAddress() + reinterpret_cast<IMAGE_DOS_HEADER*>(GetBaseAddress())->e_lfanew);
+		uint16_t sectionCount = ntHeaders->FileHeader.NumberOfSections;
+		IMAGE_SECTION_HEADER* section = IMAGE_FIRST_SECTION(ntHeaders);
+		for (uint16_t i = 0; i < sectionCount; i++) {
+			if (strcmp(reinterpret_cast<const char*>(section->Name), ".dlmre") == 0) {
+				return true;
+			}
+			++section;
+		}
+		return false;
+	}
+
+	uintptr_t DynamicHandle::GetEntryPoint() const
+	{
+		if (!IsValid()) {
+			return 0u;
+		}
+
+		IMAGE_NT_HEADERS* ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS*>(GetBaseAddress() + reinterpret_cast<IMAGE_DOS_HEADER*>(GetBaseAddress())->e_lfanew);
+		if (!HasEntryPointDelaySupport()) {
+			return GetBaseAddress() + ntHeaders->OptionalHeader.AddressOfEntryPoint;
+		}
+		else {
+			uint16_t sectionCount = ntHeaders->FileHeader.NumberOfSections;
+			IMAGE_SECTION_HEADER* section = IMAGE_FIRST_SECTION(ntHeaders);
+			for (uint16_t i = 0; i < sectionCount; i++) {
+				if (strcmp(reinterpret_cast<const char*>(section->Name), ".dlmre") == 0) {
+					 uint32_t* dlmreDesc = reinterpret_cast<uint32_t*>(GetBaseAddress() + section->VirtualAddress);
+					 if (dlmreDesc[0] == 1) {
+						 return GetBaseAddress() + dlmreDesc[1];
+					 }
+				}
+				++section;
+			}
+		}
+		return GetBaseAddress() + ntHeaders->OptionalHeader.AddressOfEntryPoint;
+	}
+
+	void DynamicHandle::DisableEntryPointDelayRedirection()
+	{
+		if (!IsValid() || !HasEntryPointDelaySupport()) {
+			return;
+		}
+
+		IMAGE_NT_HEADERS* ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS*>(GetBaseAddress() + reinterpret_cast<IMAGE_DOS_HEADER*>(GetBaseAddress())->e_lfanew);
+		DWORD oldProtection = 0;
+		VirtualProtect(&ntHeaders->OptionalHeader.AddressOfEntryPoint, sizeof(ntHeaders->OptionalHeader.AddressOfEntryPoint), PAGE_READWRITE, &oldProtection);
+		ntHeaders->OptionalHeader.AddressOfEntryPoint = GetEntryPoint() - GetBaseAddress();
+		VirtualProtect(&ntHeaders->OptionalHeader.AddressOfEntryPoint, sizeof(ntHeaders->OptionalHeader.AddressOfEntryPoint), oldProtection, nullptr);
+	}
+
 	const DynamicImportModelMap& DynamicHandle::GetParsedDynamicImports() const {
 		return parsedDynamicImports;
 	}
@@ -73,12 +130,19 @@ namespace DynaLink
 		return originalHandle;
 	}
 
-	std::shared_ptr<DynamicHandle> DynamicHandle::Create(HMODULE handle, const std::string& file) {
+	std::shared_ptr<DynamicHandle> DynamicHandle::Create(HMODULE handle, const std::string& file, const std::vector<std::string>& dynamicLinkFiles) {
 		if (!ModuleUtils::IsModuleValid(handle) || !fs::exists(file) || !fs::is_regular_file(file)) {
 			return nullptr;
 		}
 
 		auto dynamicHandle = std::shared_ptr<DynamicHandle>(new DynamicHandle(handle, file));
+		for (const auto& dynamicLinkFile : dynamicLinkFiles) {
+			auto model = DynamicImportModel::ParseFromFile(dynamicLinkFile);
+			if (!model) {
+				continue;
+			}
+			dynamicHandle->parsedDynamicImports.insert({ model->target, *model });
+		}
 		DynamicLinker::GetAllDynamicImports(dynamicHandle);
 		return dynamicHandle;
 	}

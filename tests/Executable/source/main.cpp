@@ -11,7 +11,17 @@ namespace fs = std::filesystem;
 #define DYNALINK_DLL "dynaldr32.dll"
 #endif
 
+void PrintHello() {
+	LOG_TRACE("Hello from Executable.exe!");
+}
+
+void PrintWorld() {
+	LOG_TRACE("World from Executable.exe!");
+}
+
 int main() {
+	&PrintHello;
+	&PrintWorld;
 	uint64_t baseAddress = reinterpret_cast<uint64_t>(GetModuleHandle(nullptr));
 	LOG_TRACE("Base address is 0x{:x}", baseAddress);
 	LOG_TRACE("Loading {}...", DYNALINK_DLL);
@@ -26,7 +36,7 @@ int main() {
 		LOG_ERROR("Failed to get LoadDynamicLinkLibrary function.");
 		return 1;
 	}
-	LoadDynamicLinkLibrary("./Library.dll", {}, nullptr);
+	LoadDynamicLinkLibrary("./Library.dll", {"Executable.dynalink.json"}, nullptr);
 	//FreeLibrary(GetModuleHandleA("Library.dll"));
 	std::cin.get();
 	return 0;

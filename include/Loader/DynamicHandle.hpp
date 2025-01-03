@@ -19,6 +19,9 @@ namespace DynaLink {
 		uintptr_t GetBaseAddress() const;
 		std::string GetFile() const;
 		std::string GetModuleName() const;
+		bool HasEntryPointDelaySupport() const;
+		uintptr_t GetEntryPoint() const;
+		void DisableEntryPointDelayRedirection();
 
 		const DynamicImportModelMap& GetParsedDynamicImports() const;
 		DynamicImportModelMap& GetParsedDynamicImports();
@@ -33,7 +36,7 @@ namespace DynaLink {
 		bool operator!=(const DynamicHandle& other) const;
 		operator HMODULE() const;
 
-		static std::shared_ptr<DynamicHandle> Create(HMODULE handle, const std::string& file);
+		static std::shared_ptr<DynamicHandle> Create(HMODULE handle, const std::string& file, const std::vector<std::string>& dynamicLinkFiles = {});
 
 	private:
 		DynamicHandle(HMODULE handle, const std::string& file);
