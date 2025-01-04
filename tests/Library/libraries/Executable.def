@@ -1,0 +1,4 @@
+LIBRARY "Executable.exe"
+EXPORTS
+    ExecutablePrintHello
+    ExecutablePrintWorld

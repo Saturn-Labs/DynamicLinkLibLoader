@@ -36,7 +36,7 @@ int main() {
 		LOG_ERROR("Failed to get LoadDynamicLinkLibrary function.");
 		return 1;
 	}
-	LoadDynamicLinkLibrary("./Library.dll", {"Executable.dynalink.json"}, nullptr);
+	LoadDynamicLinkLibrary("./Library.dll", {"../../../tests/Library/links/Executable.link.json"}, nullptr);
 	//FreeLibrary(GetModuleHandleA("Library.dll"));
 	std::cin.get();
 	return 0;
